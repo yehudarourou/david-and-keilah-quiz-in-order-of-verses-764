@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חידון דוד ואנשי קעילה - לפי סדר הפסוקים</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.2);
+            --glass-border: rgba(255, 255, 255, 0.3);
+        }
+
+        body {
+            font-family: 'Assistant', sans-serif;
+            background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 50%, #fdbb2d 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            padding: 2.5rem;
+            width: 90%;
+            max-width: 650px;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+
+        .logo-fixed {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 120px;
+            z-index: 100;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .option-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            margin-bottom: 0.85rem;
+            display: flex;
+            align-items: center;
+            padding: 1.2rem;
+            border-radius: 16px;
+            text-align: right;
+        }
+
+        .option-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .option-card.selected {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: white;
+            box-shadow: 0 0 15px rgba(255,255,255,0.3);
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            margin: 2rem 0;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #fff, #e0e0e0);
+            transition: width 0.5s ease;
+        }
+
+        .btn {
+            background: white;
+            color: #1a2a6c;
+            font-weight: 800;
+            padding: 0.8rem 2.5rem;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            background: #f8f9fa;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .score-red { color: #ff5f6d; text-shadow: 0 0 10px rgba(255,95,109,0.3); }
+        .score-orange { color: #ffb347; text-shadow: 0 0 10px rgba(255,179,71,0.3); }
+        .score-green { color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.3); }
+
+        .hidden { display: none !important; }
+
+        footer {
+            position: fixed;
+            bottom: 15px;
+            width: 100%;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.85rem;
+            text-align: center;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <img src="logo.png" alt="Logo" class="logo-fixed" onerror="this.style.display='none'">
+
+    <!-- Welcome Screen -->
+    <div id="welcome-screen" class="glass-panel">
+        <div class="mb-8 rounded-2xl overflow-hidden shadow-2xl">
+            <img src="https://images.unsplash.com/photo-1438210158284-96d70013f15c?auto=format&fit=crop&q=80&w=800" alt="Bible Scene" class="w-full h-56 object-cover">
+        </div>
+        <h1 class="text-5xl font-extrabold mb-4 tracking-tight">דוד ואנשי קעילה</h1>
+        <p class="text-xl opacity-90 mb-10 leading-relaxed">מסע לימודי בעקבות שמואל א' פרק כ"ג <br><span class="text-sm font-light italic">"הַיַסְגִּרוּ בַעֲלֵי קְעִילָה אֹתוֹ וְאֶת אֲנָשָׁיו בְּיַד שָׁאוּל?"</span></p>
+        <button onclick="startGame()" class="btn text-xl">התחל בחידון</button>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quiz-screen" class="glass-panel hidden">
+        <div class="flex justify-between items-center mb-1">
+            <span id="question-count" class="text-sm font-semibold tracking-wider opacity-80 uppercase">שאלה 1/10</span>
+            <span id="current-score-text" class="text-sm font-bold bg-white/20 px-3 py-1 rounded-lg">ניקוד: 0</span>
+        </div>
+        <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+        </div>
+        
+        <h2 id="question-text" class="text-2xl font-bold mb-8 leading-tight min-h-[4rem] flex items-center justify-center"></h2>
+        
+        <div id="options-container" class="space-y-3"></div>
+
+        <div class="mt-10 flex justify-center">
+            <button id="next-btn" onclick="handleNext()" class="btn hidden">לשאלה הבאה</button>
+        </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="results-screen" class="glass-panel hidden">
+        <div id="trophy-icon" class="text-7xl mb-6">🏆</div>
+        <h2 class="text-4xl font-bold mb-2">סיכום החידון</h2>
+        
+        <div class="text-7xl font-black my-8" id="final-score-container">
+            <span id="final-score">0</span>
+        </div>
+        
+        <p id="feedback-text" class="text-xl italic mb-10 px-6 leading-relaxed"></p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <button onclick="restartGame()" class="btn py-4">נסה שוב</button>
+            <button onclick="saveResult()" class="btn py-4">שמור תוצאה</button>
+            <button onclick="openReview()" class="btn py-4">צפה בתשובות</button>
+        </div>
+    </div>
+
+    <!-- Review Screen -->
+    <div id="review-screen" class="glass-panel hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-extrabold">סקירת תשובות</h2>
+            <div id="review-score-badge" class="px-4 py-1 rounded-full text-sm font-bold"></div>
+        </div>
+        
+        <div class="bg-black/20 p-8 rounded-2xl text-right mb-8 min-h-[300px]">
+            <p id="review-verse-ref" class="text-xs text-white/50 mb-2 font-mono uppercase"></p>
+            <h3 id="review-question" class="text-xl font-bold mb-6"></h3>
+            <div id="review-options" class="space-y-3"></div>
+        </div>
+        
+        <div class="flex justify-between items-center px-2">
+            <button onclick="prevReview()" id="prev-rev-btn" class="btn px-8 py-2">הקודם</button>
+            <span id="review-index-text" class="font-bold">1 / 10</span>
+            <button onclick="nextReview()" id="next-rev-btn" class="btn px-8 py-2">הבא</button>
+        </div>
+        <button onclick="closeReview()" class="mt-8 text-sm font-medium hover:underline opacity-60">חזור למסך התוצאות</button>
+    </div>
+
+    <footer>
+        מו"פ אמית | מקיף אמי"ת ב"ש
+    </footer>
+
+    <script>
+        // השאלות מסודרות לפי סדר הפסוקים בפרק כ"ג
+        const sortedQuestions = [
+            {
+                q: "בפתיחת האירוע (פסוק א), מה מדווחים לדוד על המתרחש בקעילה?",
+                a: "הִנֵּה פְלִשְׁתִּים נִלְחָמִים בִּקְעִילָה וְהֵמָּה שֹׁסִים אֶת הַגֳּרָנוֹת",
+                options: ["הִנֵּה פְלִשְׁתִּים נִלְחָמִים בִּקְעִילָה וְהֵמָּה שֹׁסִים אֶת הַגֳּרָנוֹת", "הִנֵּה שָׁאוּל בָּא לָקַחַת אֶת קְעִילָה", "הִנֵּה בַּעֲלֵי קְעִילָה קוֹרְאִים לְעֶזְרָה מִפְּנֵי הַמָּגֵפָה", "הִנֵּה אֲנָשִׁים מִקְעִילָה מְחַפְּשִׂים אֶת דָּוִד בַּמְּעָרָה"],
+                verse: "פסוק א"
+            },
+            {
+                q: "מה הייתה תשובת ה' לדוד כששאל בפעם הראשונה האם ללכת להושיע את קעילה (פסוק ב)?",
+                a: "לֵךְ וְהִכִּיתָ בַפְּלִשְׁתִּים וְהוֹשַׁעְתָּ אֶת קְעִילָה",
+                options: ["לֵךְ וְהִכִּיתָ בַפְּלִשְׁתִּים וְהוֹשַׁעְתָּ אֶת קְעִילָה", "אַל תֵּלֵךְ כִּי שָׁאוּל יִרְדֹּף אַחֲרֶיךָ", "חֲכֵה עַד שֶׁיָּבוֹאוּ אֲנָשִׁים מִקְעִילָה לְבַקֵּשׁ עֶזְרָה", "הַמְתֵּן שִׁבְעַת יָמִים עַד שֶׁיַּגִּיעַ שְׁמוּאֵל"],
+                verse: "פסוק ב"
+            },
+            {
+                q: "מדוע פחדו אנשי דוד לצאת למלחמה (פסוק ג)?",
+                a: "כִּי הֵם פָּחֲדוּ לִהְיוֹת בִּיהוּדָה וְכָל שֶׁכֵּן לָלֶכֶת לִמְעַרְכוֹת פְּלִשְׁתִּים",
+                options: ["כִּי הֵם פָּחֲדוּ לִהְיוֹת בִּיהוּדָה וְכָל שֶׁכֵּן לָלֶכֶת לִמְעַרְכוֹת פְּלִשְׁתִּים", "כִּי הֵם חָשְׁבוּ שֶׁאֵין לָהֶם מספיק נֶשֶׁק", "כִּי הֵם לֹא הֶאֱמִינוּ שֶׁדָּוִד מְדַבֵּר עִם ה'", "כִּי הֵם הָיוּ רְעֵבִים וַעֲיֵפִים מִן הַדֶּרֶךְ"],
+                verse: "פסוק ג"
+            },
+            {
+                q: "מה קרה כשאביתר בן אחימלך ברח אל דוד לקעילה (פסוק ו)?",
+                a: "אֵפוֹד יָרַד בְּיָדוֹ",
+                options: ["אֵפוֹד יָרַד בְּיָדוֹ", "הוּא הֵבִיא אִתּוֹ אֶת חֶרֶב גָּלְיָת", "הוּא הֵבִיא אִתּוֹ אֶת כֶּתֶר הַמַּלְכוּת", "הוּא הֵבִיא אִתּוֹ אֶת הַמָּן מִן הַמִּשְׁכָּן"],
+                verse: "פסוק ו"
+            },
+            {
+                q: "מה אמר שאול כששמע שדוד נכנס לקעילה (פסוק ז)?",
+                a: "נִכַּר אֹתוֹ אֱלֹהִים בְּיָדִי כִּי נִסְגַּר לָבוֹא בְּעִיר דְּלָתַיִם וּבְרִיחַ",
+                options: ["נִכַּר אֹתוֹ אֱלֹהִים בְּיָדִי כִּי נִסְגַּר לָבוֹא בְּעִיר דְּלָתַיִם וּבְרִיחַ", "הִנֵּה דָּוִד בָּא לְהִלָּחֵם בִּי בְּעִיר הַחוֹמָה", "הַבּוֹגֵד הִגִּיעַ לִמְקוֹם הַמִּקְלָט שֶׁלּוֹ", "כָּל הָעָם יֵלֵךְ עַכְשָׁו אַחֲרֵי דָּוִד הַגִּבּוֹר"],
+                verse: "פסוק ז"
+            },
+            {
+                q: "מה הייתה כוונת שאול כשהשמיע לכל העם למלחמה (פסוק ח)?",
+                a: "לָרֶדֶת קְעִילָה לָצוּר אֶל דָּוִד וְאֶל אֲנָשָׁיו",
+                options: ["לָרֶדֶת קְעִילָה לָצוּר אֶל דָּוִד וְאֶל אֲנָשָׁיו", "לָרֶדֶת וּלְהַצִּיל אֶת קְעִילָה מִיַּד פְּלִשְׁתִּים", "לַעֲשׂוֹת שָׁלוֹם עִם דָּוִד", "לִבְנוֹת מִזְבֵּחַ חָדָשׁ בִּקְעִילָה"],
+                verse: "פסוק ח"
+            },
+            {
+                q: "מה ביקש דוד מאביתר הכהן לעשות כשהבין ששאול חורש עליו רעה (פסוק ט)?",
+                a: "הַגִּישָׁה הָאֵפוֹד",
+                options: ["הַגִּישָׁה הָאֵפוֹד", "הַקְרֵב קָרְבָּן", "קְרָא לַחֲכָמִים", "בְּרַח מִן הָעִיר"],
+                verse: "פסוק ט"
+            },
+            {
+                q: "מה הייתה שאלת דוד השנייה לה' בתוך קעילה (פסוק יא)?",
+                a: "הֲיַסְגִּרוּנִי בַעֲלֵי קְעִילָה בְיָדוֹ הֲיֵרֵד שָׁאוּל כַּאֲשֶׁר שָׁמַע עַבְדֶּךָ",
+                options: ["הֲיַסְגִּרוּנִי בַעֲלֵי קְעִילָה בְיָדוֹ הֲיֵרֵד שָׁאוּל כַּאֲשֶׁר שָׁמַע עַבְדֶּךָ", "הַאִם לָצֵאת לְמִלְחָמָה מוּל צְבָא שָׁאוּל", "הַאִם עַם יִשְׂרָאֵל יִבְחַר בִּי לְמֶלֶךְ עַכְשָׁו", "הַאִם שָׁאוּל יִשְׂרֹף אֶת הָעִיר קְעִילָה"],
+                verse: "פסוק יא"
+            },
+            {
+                q: "מה ענו ה' לדוד על השאלה: 'הֲיַסְגִּרוּ בַעֲלֵי קְעִילָה אֹתִי וְאֶת אֲנָשַׁי בְּיַד שָׁאוּל' (פסוק יב)?",
+                a: "יַסְגִּירוּ",
+                options: ["יַסְגִּירוּ", "לֹא יַסְגִּירוּ", "לֹא תֵּדַע עַד שֶׁיָּבוֹא שָׁאוּל", "בְּרַח כִּי הֵם כְּבָר הִסְגִּירוּ"],
+                verse: "פסוק יב"
+            },
+            {
+                q: "מה עשה דוד בעקבות תשובת ה' (פסוק יג)?",
+                a: "וַיָּקָם דָּוִד וַאֲנָשָׁיו כְּשֵׁשׁ מֵאוֹת אִישׁ וַיֵּצְאוּ מִקְעִילָה וַיִּתְהַלְּכוּ בַּאֲשֶׁר יִתְהַלָּכוּ",
+                options: ["וַיָּקָם דָּוִד וַאֲנָשָׁיו כְּשֵׁשׁ מֵאוֹת אִישׁ וַיֵּצְאוּ מִקְעִילָה וַיִּתְהַלְּכוּ בַּאֲשֶׁר יִתְהַלָּכוּ", "הוּא נִשְׁאַר וְנִלְחַם בְּאַנְשֵׁי קְעִילָה עַל כְּפִיּוּת הַטּוֹבָה", "הוּא הִסְגִּיר אֶת עַצְמוֹ לְשָׁאוּל כְּדֵי לְהַצִּיל אֶת הָעִיר", "הוּא שָׁלַח אֶת אֲבִיָתָר לְבַקֵּשׁ רַחֲמִים מִשָּׁאוּל"],
+                verse: "פסוק יג"
+            }
+        ];
+
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = [];
+        let reviewIndex = 0;
+
+        function shuffleOptions(options) {
+            let shuffled = [...options];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function startGame() {
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            
+            // השאלות נשארות בסדר המקורי (סדר הפסוקים), אך התשובות מעורבבות
+            questions = sortedQuestions.map(q => ({
+                ...q,
+                shuffledOptions: shuffleOptions(q.options)
+            }));
+            
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers = [];
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentQuestionIndex];
+            document.getElementById('question-text').innerText = q.q;
+            document.getElementById('question-count').innerText = `שאלה ${currentQuestionIndex + 1} / ${questions.length}`;
+            document.getElementById('current-score-text').innerText = `ניקוד: ${score}`;
+            
+            const progress = ((currentQuestionIndex) / questions.length) * 100;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            const labels = ['א', 'ב', 'ג', 'ד'];
+            q.shuffledOptions.forEach((opt, index) => {
+                const div = document.createElement('div');
+                div.className = 'option-card';
+                div.innerHTML = `
+                    <div class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-white/20 rounded-full font-bold ml-4">
+                        ${labels[index]}
+                    </div>
+                    <div class="text-lg font-medium">${opt}</div>
+                `;
+                div.onclick = () => selectOption(div, opt);
+                container.appendChild(div);
+            });
+            
+            document.getElementById('next-btn').classList.add('hidden');
+        }
+
+        function selectOption(element, selectedText) {
+            const cards = document.querySelectorAll('.option-card');
+            cards.forEach(c => c.classList.remove('selected'));
+            element.classList.add('selected');
+            
+            const correct = questions[currentQuestionIndex].a;
+            const isCorrect = selectedText === correct;
+            
+            userAnswers[currentQuestionIndex] = {
+                selected: selectedText,
+                isCorrect: isCorrect
+            };
+
+            cards.forEach(c => c.onclick = null); // Disable further clicks
+            
+            if(isCorrect) {
+                score += 10;
+                element.style.background = "rgba(0, 255, 136, 0.2)";
+                element.style.borderColor = "#00ff88";
+            } else {
+                element.style.background = "rgba(255, 95, 109, 0.2)";
+                element.style.borderColor = "#ff5f6d";
+            }
+
+            document.getElementById('next-btn').classList.remove('hidden');
+            document.getElementById('next-btn').innerText = (currentQuestionIndex === questions.length - 1) ? 'סיים וצפה בתוצאה' : 'לשאלה הבאה';
+        }
+
+        function handleNext() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+            
+            document.getElementById('final-score').innerText = score;
+            const feedbackElem = document.getElementById('feedback-text');
+            const scoreContainer = document.getElementById('final-score-container');
+            
+            if (score >= 80) {
+                scoreContainer.className = "text-7xl font-black my-8 score-green";
+                feedbackElem.innerText = "מצוין! בקיאותך בסיפור דוד ואנשי קעילה מרשימה. הבנת לעומק את המתח בין כפיות הטובה של העיר לבין הנחיית ה'!";
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#00ff88', '#ffffff', '#fdbb2d']
+                });
+            } else if (score >= 60) {
+                scoreContainer.className = "text-7xl font-black my-8 score-orange";
+                feedbackElem.innerText = "עבודה טובה. אתה מכיר את עיקרי האירוע, אך כדאי לשים לב יותר לדיאלוגים בין דוד לה' דרך האפוד.";
+            } else {
+                scoreContainer.className = "text-7xl font-black my-8 score-red";
+                feedbackElem.innerText = "מומלץ לחזור על פסוקי הפרק שוב. שים לב במיוחד לסדר האירועים: מהצלת העיר ועד לבריחה למדבר.";
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('results-screen').classList.add('hidden');
+            startGame();
+        }
+
+        async function saveResult() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerText = "שומר...";
+            const element = document.getElementById('results-screen');
+            const canvas = await html2canvas(element);
+            const link = document.createElement('a');
+            link.download = `תוצאה_חידון_דוד_קעילה_${score}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            btn.disabled = false;
+            btn.innerText = "שמור תוצאה";
+        }
+
+        function openReview() {
+            document.getElementById('results-screen').classList.add('hidden');
+            document.getElementById('review-screen').classList.remove('hidden');
+            reviewIndex = 0;
+            showReviewQuestion();
+        }
+
+        function showReviewQuestion() {
+            const q = questions[reviewIndex];
+            const userAns = userAnswers[reviewIndex];
+            
+            document.getElementById('review-question').innerText = q.q;
+            document.getElementById('review-verse-ref').innerText = q.verse;
+            document.getElementById('review-index-text').innerText = `${reviewIndex + 1} / ${questions.length}`;
+            
+            const badge = document.getElementById('review-score-badge');
+            badge.innerText = userAns.isCorrect ? "10 נק' (נכון)" : "0 נק' (טעות)";
+            badge.className = userAns.isCorrect ? "px-4 py-1 rounded-full text-sm font-bold bg-green-500/30 text-green-200" : "px-4 py-1 rounded-full text-sm font-bold bg-red-500/30 text-red-200";
+
+            const container = document.getElementById('review-options');
+            container.innerHTML = '';
+            
+            const labels = ['א', 'ב', 'ג', 'ד'];
+            q.shuffledOptions.forEach((opt, idx) => {
+                const div = document.createElement('div');
+                div.className = 'p-4 rounded-xl border border-white/10 text-right text-lg';
+                
+                if (opt === q.a) {
+                    div.classList.add('bg-green-500/40', 'border-green-300');
+                    if (!userAns.isCorrect) div.style.opacity = "0.9";
+                } else if (opt === userAns.selected && !userAns.isCorrect) {
+                    div.classList.add('bg-red-500/40', 'border-red-300');
+                } else {
+                    div.classList.add('opacity-40');
+                }
+                
+                div.innerHTML = `<span class="font-bold ml-2">${labels[idx]}.</span> ${opt}`;
+                container.appendChild(div);
+            });
+
+            document.getElementById('prev-rev-btn').disabled = reviewIndex === 0;
+            document.getElementById('next-rev-btn').innerText = reviewIndex === questions.length - 1 ? "סיים סקירה" : "הבא";
+        }
+
+        function nextReview() {
+            if (reviewIndex < questions.length - 1) {
+                reviewIndex++;
+                showReviewQuestion();
+            } else {
+                closeReview();
+            }
+        }
+
+        function prevReview() {
+            if (reviewIndex > 0) {
+                reviewIndex--;
+                showReviewQuestion();
+            }
+        }
+
+        function closeReview() {
+            document.getElementById('review-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
